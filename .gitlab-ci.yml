@@ -1,0 +1,39 @@
+# .gitlab-ci.yml
+
+# Define the stages of the CIpipeline
+stages:
+  - build
+  - test
+
+build:
+  image: ubuntu:22.04  
+  stage: build
+  before_script:
+    - apt-get update
+    - apt-get install -y build-essential linux-headers-$(uname -r) linux-image-$(uname -r) kmod
+    - uname -r
+  script:
+    - make all
+  artifacts:
+    paths:
+      - kmt.ko  
+    expire_in: 1 week
+
+test:
+  image: ubuntu:22.04
+  stage: test
+  dependencies:
+    - build
+  before_script:
+    - apt-get update
+    - apt-get install -y build-essential linux-headers-$(uname -r) linux-image-$(uname -r) kmod
+    - apt-get install -y kmod
+    - uname -r
+  script:
+    - cp kmt.ko /lib/modules/$(uname -r)/kernel/drivers/
+    - depmod
+    - modprobe kmt
+    - dmesg | tail -n 20
+    - modprobe -r kmt
+    - dmesg | tail -n 20
+
